@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import connectDB from './config/db.js';
 import userRoutes from './routes/userRoutes.js';
+import postRoutes from './routes/postRoutes.js';
 
 dotenv.config();
 connectDB();
@@ -13,9 +14,8 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.send('auth is running...');
-});
-
+    res.setEncoding('API is running...');
+})
 app.use('/api/users', userRoutes);
 
 const PORT = process.env.PORT || 5000;

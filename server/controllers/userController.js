@@ -1,4 +1,5 @@
 import User from '../models/userModel.js';
+import Post from '../models/postModel.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
@@ -50,7 +51,6 @@ export const forgotPassword = async (req, res) => {
     const resetToken = user.getResetPasswordToken();
     await user.save({ validateBeforeSave: false });
 
-    
     console.log('Reset Token for testing:', resetToken);
     
     res.status(200).json({ success: true, message: `Password reset token sent (check console).` });
@@ -70,4 +70,58 @@ export const resetPassword = async (req, res) => {
     user.resetPasswordExpire = undefined;
     await user.save();
     res.status(200).json({ success: true, message: "Password updated successfully" });
+};
+
+export const getUserProfile = async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if (user) {
+    res.json({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+    });
+  } else {
+    res.status(404).json({ message: 'User not found' });
+  }
+};
+
+
+
+export const getAllUsers = async (req, res) => {
+    const users = await User.find({}).select('-password');
+    res.json(users);
+};
+
+
+export const updateUserByAdmin = async (req, res) => {
+    const user = await User.findById(req.params.id);
+    if(user) {
+        user.username = req.body.username || user.username;
+        user.email = req.body.email || user.email;
+        user.role = req.body.role || user.role;
+        if (req.body.password) {
+            user.password = req.body.password;
+        }
+        const updatedUser = await user.save();
+        res.json({
+            _id: updatedUser._id,
+            username: updatedUser.username,
+            email: updatedUser.email,
+            role: updatedUser.role,
+        });
+    } else {
+        res.status(404).json({ message: 'User not found' });
+    }
+};
+
+export const deleteUserByAdmin = async (req, res) => {
+    const user = await User.findById(req.params.id);
+    if (user) {
+        await Post.deleteMany({ author: user._id });
+        await user.deleteOne();
+        res.json({ message: 'User and their posts removed' });
+    } else {
+        res.status(404).json({ message: 'User not found' });
+    }
 };
