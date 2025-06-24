@@ -51,6 +51,7 @@ export const forgotPassword = async (req, res) => {
     const resetToken = user.getResetPasswordToken();
     await user.save({ validateBeforeSave: false });
 
+
     console.log('Reset Token for testing:', resetToken);
     
     res.status(200).json({ success: true, message: `Password reset token sent (check console).` });
@@ -87,12 +88,10 @@ export const getUserProfile = async (req, res) => {
 };
 
 
-
 export const getAllUsers = async (req, res) => {
     const users = await User.find({}).select('-password');
     res.json(users);
 };
-
 
 export const updateUserByAdmin = async (req, res) => {
     const user = await User.findById(req.params.id);
