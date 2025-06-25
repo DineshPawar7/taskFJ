@@ -1,52 +1,73 @@
-import React, { useState, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+
+import React, { useContext, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
 import * as api from '../api';
 import toast from 'react-hot-toast';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
   const { login } = useContext(UserContext);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    const token = credentialResponse.credential;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
     try {
-      const { data } = await api.login(formData);
+      const { data } = await api.googleLogin(token);
+
       login(data);
+
       toast.success('Logged in successfully!');
-      if (data.role === 'admin') {
+
+      if (data?.role === 'admin') {
         navigate('/admin/dashboard');
       } else {
         navigate('/');
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed');
+      console.error('Google Login Error:', error);
+
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        'Google Login failed. Please try again later.';
+
+      toast.error(message);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleGoogleError = () => {
+    toast.error('Google Login was unsuccessful. Please try again.');
+  };
+
   return (
-    <div className="max-w-md mx-auto mt-10">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-3xl border border-black">
-        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
-        <div className="mb-4">
-          <label className="block text-black">Email</label>
-          <input type="email" name="email" onChange={handleChange} className="w-full px-3 py-2 border rounded" required />
-        </div>
-        <div className="mb-6">
-          <label className="block text-black">Password</label>
-          <input type="password" name="password" onChange={handleChange} className="w-full px-3 py-2 border rounded" required />
-        </div>
-        <button type="submit" className="w-full bg-primary py-2 rounded">Login</button>
-        <div className="mt-4 text-center">
-          <Link to="/forgot-password"
-           className="text-sm text-blue-500 hover:underline">Forgot Password?</Link>
-        </div>
-      </form>
+    <div className="max-w-sm mx-auto mt-20 flex flex-col items-center">
+      <div className="bg-white p-8 rounded-lg text-center w-full border border-black">
+        <h2 className="text-2xl font-bold mb-2">Welcome!</h2>
+        <p className="text-black mb-6">Sign in to continue</p>
+
+        {loading ? (
+          <button
+            className="w-full py-2 text-white rounded-md cursor-not-allowed opacity-70"
+            disabled
+            aria-busy="true"
+          >
+            Signing in...
+          </button>
+        ) : (
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            useOneTap
+            aria-label="Login with Google"
+          />
+        )}
+      </div>
     </div>
   );
 };

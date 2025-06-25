@@ -9,8 +9,7 @@ API.interceptors.request.use((req) => {
   return req;
 });
 
-export const login = (formData) => API.post('/users/login', formData);
-export const register = (formData) => API.post('/users/register', formData);
+
 
 export const fetchPosts = () => API.get('/posts/all');
 export const createPost = (newPost) => API.post('/posts/create', newPost);
@@ -19,4 +18,11 @@ export const deletePost = (id) => API.delete(`/posts/admin/${id}`);
 
 export const fetchAllUsers = () => API.get('/users/admin/all');
 export const deleteUser = (id) => API.delete(`/users/admin/user/${id}`);
+
+
+export const googleLogin = (token) => API.post('/users/google-login', { token });
+
+
+
+
 
