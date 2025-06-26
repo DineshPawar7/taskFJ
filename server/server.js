@@ -4,18 +4,38 @@ import cors from 'cors';
 import connectDB from './config/db.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
+import session from 'express-session';
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = ['http://localhost:5173'];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
+
 app.use(express.json());
 
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
+
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 1000 * 60 * 60,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production'
+  }
+}));
+
+
 
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);

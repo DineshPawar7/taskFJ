@@ -3,7 +3,9 @@ import Post from '../models/postModel.js';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 
+
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 
 const generateToken = (user) => {
   return jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -22,15 +24,19 @@ export const registerUser = async (req, res) => {
 
     const user = await User.create({ username, email, password });
 
-    res.status(201).json({
+    req.session.user = {
       _id: user._id,
       username: user.username,
       email: user.email,
       role: user.role,
-      token: generateToken(user),
+    };
+
+    res.status(201).json({
+      message: 'Registration successful',
+      user: req.session.user,
     });
   } catch (error) {
-    res.status(400).json({ message: 'Invalid user data' });
+    res.status(400).json({ message: 'Invalid user data', error: error.message });
   }
 };
 
@@ -70,19 +76,47 @@ export const googleLogin = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    req.session.user = {
       _id: user._id,
       username: user.username,
       email: user.email,
       role: user.role,
-      avatar: user.avatar,
-      token: generateToken(user),
+    };
+
+    res.status(200).json({
+      message: 'Login successful',
+      user: req.session.user,
     });
   } catch (error) {
     console.error('Google Login Error:', error);
     res.status(401).json({ message: 'Invalid Google Token' });
   }
 };
+
+
+export const logoutUser = (req, res) => {
+  req.session.destroy((err) => {
+    if (err) return res.status(500).json({ message: 'Logout failed' });
+    res.clearCookie('connect.sid'); 
+    res.json({ message: 'Logged out successfully' });
+  });
+};
+
+export const getCurrentSessionUser = async (req, res) => {
+  if (req.session.user) {
+    const user = await User.findById(req.session.user._id);
+    res.json({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+    });
+  } else {
+    res.status(401).json({ message: 'Not authenticated' });
+  }
+};
+
+
 
 export const getUserProfile = async (req, res) => {
   try {
@@ -152,3 +186,10 @@ export const deleteUserByAdmin = async (req, res) => {
     res.status(500).json({ message: 'Deletion failed' });
   }
 };
+
+
+
+
+
+
+
